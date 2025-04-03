@@ -80,23 +80,38 @@ pub fn parser(delta_ops: Vec<DeltaOp>) -> String {
             }
         } else if let Value::Object(obj_insert) = &op.insert {
             if let Some(Value::String(savvy_image)) = obj_insert.get("savvy_image") {
-                let tmp_alt = match &op.attributes {
-                    Some(Value::Object(attr)) => {
-                        attr.get("alt").and_then(|v| v.as_str()).unwrap_or_default()
-                    }
-                    _ => "",
+                let (tmp_alt, tmp_width) = if let Some(Value::Object(attr)) = &op.attributes {
+                    (
+                        attr.get("alt").and_then(|v| v.as_str()).unwrap_or_default(),
+                        attr.get("width")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or_default(),
+                    )
+                } else {
+                    ("", "")
                 };
 
-                reader.push_str(&format!(
-                    "<img src=\"{}\" alt=\"{}\">",
-                    savvy_image, tmp_alt
-                ));
+                if tmp_width.is_empty() {
+                    reader.push_str(&format!(
+                        "<img src=\"{}\" alt=\"{}\">",
+                        savvy_image, tmp_alt
+                    ));
+                } else {
+                    reader.push_str(&format!(
+                        "<img src=\"{}\" alt=\"{}\" width=\"{}\">",
+                        savvy_image, tmp_alt, tmp_width
+                    ));
+                }
             } else if let Some(Value::String(savvy_attach)) = obj_insert.get("savvy_attach") {
-                let tmp_alt = match &op.attributes {
-                    Some(Value::Object(attr)) => {
-                        attr.get("alt").and_then(|v| v.as_str()).unwrap_or_default()
-                    }
-                    _ => "",
+                let (tmp_alt, tmp_width) = if let Some(Value::Object(attr)) = &op.attributes {
+                    (
+                        attr.get("alt").and_then(|v| v.as_str()).unwrap_or_default(),
+                        attr.get("width")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or_default(),
+                    )
+                } else {
+                    ("", "")
                 };
 
                 let format = savvy_attach.split(".").last().unwrap();
@@ -107,10 +122,17 @@ pub fn parser(delta_ops: Vec<DeltaOp>) -> String {
                         savvy_attach, tmp_alt
                     ));
                 } else {
-                    reader.push_str(&format!(
-                        "<img src=\"{}\" alt=\"{}\">",
-                        savvy_attach, tmp_alt
-                    ));
+                    if tmp_width.is_empty() {
+                        reader.push_str(&format!(
+                            "<img src=\"{}\" alt=\"{}\">",
+                            savvy_attach, tmp_alt
+                        ));
+                    } else {
+                        reader.push_str(&format!(
+                            "<img src=\"{}\" alt=\"{}\" width=\"{}\">",
+                            savvy_attach, tmp_alt, tmp_width
+                        ));
+                    }
                 }
             } else if let Some(Value::Object(mention)) = obj_insert.get("mention") {
                 let mention_index = mention
